@@ -58,7 +58,8 @@ import com.habitrpg.android.habitica.extensions.updateStatusBarColor
 import com.habitrpg.android.habitica.helpers.AppConfigManager
 import com.habitrpg.android.habitica.helpers.TaskDescriptionBuilder
 import com.habitrpg.android.habitica.models.members.Member
-import com.habitrpg.android.habitica.ui.activities.TaskFormActivity.Companion.TASK_VALUE_KEY
+import com.habitrpg.android.habitica.models.tasks.Task
+import com.habitrpg.android.habitica.ui.activities.TaskFormActivity.Companion.TASK_PRIORITY_KEY
 import com.habitrpg.android.habitica.ui.theme.colors
 import com.habitrpg.android.habitica.ui.theme.contentBackgroundFor
 import com.habitrpg.android.habitica.ui.theme.primaryBackgroundFor
@@ -74,6 +75,7 @@ import com.habitrpg.common.habitica.extensions.observeOnce
 import com.habitrpg.common.habitica.helpers.LanguageHelper
 import com.habitrpg.common.habitica.helpers.MainNavigationController
 import com.habitrpg.common.habitica.theme.HabiticaTheme
+import com.habitrpg.shared.habitica.models.tasks.TaskDifficulty
 import com.habitrpg.shared.habitica.models.tasks.TaskType
 import dagger.hilt.android.AndroidEntryPoint
 import dagger.hilt.android.lifecycle.HiltViewModel
@@ -94,7 +96,7 @@ constructor(
     val configManager: AppConfigManager
 ) : BaseViewModel(userRepository, userViewModel) {
     val taskID: String = savedStateHandle[TaskFormActivity.TASK_ID_KEY] ?: ""
-    val taskValue: Double = savedStateHandle[TaskFormActivity.TASK_VALUE_KEY] ?: 0.0
+    val taskPriority: Float = savedStateHandle[TaskFormActivity.TASK_PRIORITY_KEY] ?: TaskDifficulty.MEDIUM.value
 
     val task = taskRepository.getTask(taskID).asLiveData()
 
@@ -111,16 +113,8 @@ class TaskSummaryActivity : BaseActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         val bundle = intent.extras ?: Bundle()
-        val taskValue = bundle.getDouble(TASK_VALUE_KEY)
-        forcedTheme = when {
-            taskValue < -20 -> "maroon"
-            taskValue < -10 -> "red"
-            taskValue < -1 -> "orange"
-            taskValue < 1 -> "yellow"
-            taskValue < 5 -> "green"
-            taskValue < 10 -> "teal"
-            else -> "blue"
-        }
+        val taskPriority = bundle.getFloat(TASK_PRIORITY_KEY, TaskDifficulty.MEDIUM.value)
+        forcedTheme = Task.forcedThemeForPriority(taskPriority)
         super.onCreate(savedInstanceState)
         setContent {
             HabiticaTheme {
@@ -132,15 +126,13 @@ class TaskSummaryActivity : BaseActivity() {
     override fun loadTheme(sharedPreferences: SharedPreferences, forced: Boolean) {
         super.loadTheme(sharedPreferences, forced)
         if (lifecycle.currentState.isAtLeast(Lifecycle.State.STARTED)) {
-            window.updateStatusBarColor(ContextCompat.getColor(this, when {
-                this.viewModel.taskValue < -20 -> R.color.maroon_50
-                this.viewModel.taskValue < -10 -> R.color.red_50
-                this.viewModel.taskValue < -1 -> R.color.orange_50
-                this.viewModel.taskValue < 1 -> R.color.yellow_10
-                this.viewModel.taskValue < 5 -> R.color.green_50
-                this.viewModel.taskValue < 10 -> R.color.teal_50
-                else -> R.color.blue_50
-            }), false)
+            window.updateStatusBarColor(
+                ContextCompat.getColor(
+                    this,
+                    Task.mediumShadeColorResForPriority(this.viewModel.taskPriority),
+                ),
+                false,
+            )
         }
     }
 }
@@ -155,14 +147,7 @@ fun TaskSummaryView(viewModel: TaskSummaryViewModel) {
 
     if (task != null) {
         val darkestColor = HabiticaTheme.colors.textPrimaryFor(task)
-        val topTextColor =
-            if ((task?.value ?: 0.0) >= -20) {
-                colorResource(
-                    task?.extraDarkTaskColor ?: R.color.white
-                )
-            } else {
-                Color.White
-            }
+        val topTextColor = colorResource(task?.extraDarkTaskColor ?: R.color.white)
         Column(Modifier.background(HabiticaTheme.colors.primaryBackgroundFor(task))) {
             Spacer(Modifier.windowInsetsTopHeight(WindowInsets.systemBars))
             Row(

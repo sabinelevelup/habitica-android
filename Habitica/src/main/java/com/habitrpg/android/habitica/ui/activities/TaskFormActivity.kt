@@ -196,16 +196,7 @@ class TaskFormActivity : BaseActivity() {
         groupID = bundle.getString(GROUP_ID_KEY)
         forcedTheme =
             if (taskId != null) {
-                val taskValue = bundle.getDouble(TASK_VALUE_KEY)
-                when {
-                    taskValue < -20 -> "maroon"
-                    taskValue < -10 -> "red"
-                    taskValue < -1 -> "orange"
-                    taskValue < 1 -> "yellow"
-                    taskValue < 5 -> "green"
-                    taskValue < 10 -> "teal"
-                    else -> "blue"
-                }
+                Task.forcedThemeForPriority(bundle.getFloat(TASK_PRIORITY_KEY, TaskDifficulty.MEDIUM.value))
             } else {
                 "taskform"
             }
@@ -217,7 +208,7 @@ class TaskFormActivity : BaseActivity() {
         tintColor = getThemeColor(R.attr.taskFormTint)
         val upperTintColor =
             if (forcedTheme == "taskform") getThemeColor(R.attr.taskFormTint) else getThemeColor(R.attr.colorAccent)
-        if (forcedTheme == "taskform" || forcedTheme == "maroon") {
+        if (forcedTheme == "taskform") {
             ToolbarColorHelper.colorizeToolbar(
                 binding.toolbar,
                 this,
@@ -472,7 +463,7 @@ class TaskFormActivity : BaseActivity() {
             menuInflater.inflate(R.menu.menu_task_edit, menu)
         }
         menu.findItem(R.id.action_save).isEnabled = canSave
-        if (forcedTheme == "taskform" || forcedTheme == "maroon") {
+        if (forcedTheme == "taskform") {
             menu.iterator().forEach {
                 val spannable = SpannableString(it.title)
                 spannable.setSpan(ForegroundColorSpan(Color.WHITE), 0, spannable.length, 0)
@@ -1065,6 +1056,7 @@ class TaskFormActivity : BaseActivity() {
         const val TASK_ID_KEY = "taskId"
         const val GROUP_ID_KEY = "groupId"
         const val TASK_VALUE_KEY = "taskValue"
+        const val TASK_PRIORITY_KEY = "taskPriority"
         const val USER_ID_KEY = "userId"
         const val TASK_TYPE_KEY = "type"
         const val IS_CHALLENGE_TASK = "isChallengeTask"

@@ -61,10 +61,20 @@ class TaskFilterDialog(
                     binding.allTaskFilter.setText(R.string.active)
                     binding.secondTaskFilter.setText(R.string.dated)
                     binding.thirdTaskFilter.setText(R.string.completed)
+                    binding.todoSortWrapper.isVisible = true
+                    binding.todoSortByDifficultySwitch.setOnCheckedChangeListener(null)
+                    binding.todoSortByDifficultySwitch.isChecked = viewModel.isTodoSortByDifficulty()
+                    binding.todoSortByDifficultySwitch.setOnCheckedChangeListener { _, isChecked ->
+                        viewModel.setTodoSortByDifficulty(isChecked)
+                        filtersChanged()
+                    }
                 }
 
                 TaskType.REWARD -> {
                 }
+            }
+            if (value != TaskType.TODO) {
+                binding.todoSortWrapper.isVisible = false
             }
             setActiveFilter(viewModel.getActiveFilter(value))
         }
@@ -100,6 +110,10 @@ class TaskFilterDialog(
             }
             setActiveFilter(null)
             setActiveTags(null)
+            if (taskType == TaskType.TODO) {
+                binding.todoSortByDifficultySwitch.isChecked = false
+                viewModel.setTodoSortByDifficulty(false)
+            }
         }
 
         if (showTags) {

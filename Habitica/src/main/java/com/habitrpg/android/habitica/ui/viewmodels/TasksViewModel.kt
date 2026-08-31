@@ -198,7 +198,11 @@ constructor(
     }
 
     fun filterCount(type: TaskType?): Int {
-        return this.tags.size + if (isTaskFilterActive(type)) 1 else 0
+        var count = this.tags.size + if (isTaskFilterActive(type)) 1 else 0
+        if (type == TaskType.TODO && isTodoSortByDifficulty()) {
+            count++
+        }
+        return count
     }
 
     fun isFiltering(type: TaskType?): Boolean {
@@ -305,6 +309,16 @@ constructor(
         return sharedPreferences.getString("filter_${type.value}", Task.FILTER_ALL) ?: if (TaskType.TODO == type) Task.FILTER_ACTIVE else Task.FILTER_ALL
     }
 
+    fun isTodoSortByDifficulty(): Boolean {
+        return sharedPreferences.getBoolean(TODO_SORT_BY_DIFFICULTY_KEY, false)
+    }
+
+    fun setTodoSortByDifficulty(enabled: Boolean) {
+        sharedPreferences.edit { putBoolean(TODO_SORT_BY_DIFFICULTY_KEY, enabled) }
+        filterSets[TaskType.TODO]?.value =
+            Triple(searchQuery, getActiveFilter(TaskType.TODO), tags)
+    }
+
     fun createQuery(unfilteredData: OrderedRealmCollection<Task>): RealmQuery<Task>? {
         if (!unfilteredData.isValid) {
             return null
@@ -351,7 +365,12 @@ constructor(
                 }
             }
             if (activeFilter != Task.FILTER_DATED) {
-                query = query.sort("position", Sort.ASCENDING, "dateCreated", Sort.DESCENDING)
+                query =
+                    if (taskType == TaskType.TODO && isTodoSortByDifficulty()) {
+                        query.sort("priority", Sort.ASCENDING, "position", Sort.ASCENDING)
+                    } else {
+                        query.sort("position", Sort.ASCENDING, "dateCreated", Sort.DESCENDING)
+                    }
             }
         }
         return query
@@ -408,5 +427,9 @@ constructor(
                 )
             }
         }
+    }
+
+    companion object {
+        private const val TODO_SORT_BY_DIFFICULTY_KEY = "todo_sort_by_difficulty"
     }
 }

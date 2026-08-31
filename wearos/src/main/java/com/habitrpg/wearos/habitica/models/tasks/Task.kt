@@ -7,6 +7,7 @@ import com.habitrpg.android.habitica.R
 import com.habitrpg.shared.habitica.models.tasks.Attribute
 import com.habitrpg.shared.habitica.models.tasks.BaseTask
 import com.habitrpg.shared.habitica.models.tasks.Frequency
+import com.habitrpg.shared.habitica.models.tasks.TaskDifficulty
 import com.habitrpg.shared.habitica.models.tasks.TaskType
 import com.squareup.moshi.Json
 import com.squareup.moshi.JsonClass
@@ -90,47 +91,45 @@ open class Task() : Parcelable, BaseTask {
     val completedChecklistCount: Int
         get() = checklist?.count { it.completed } ?: 0
 
-    val extraLightTaskColor: Int
-        get() {
-            val value = value ?: 0.0
-            return when {
-                value < -20 -> return R.color.watch_maroon_200
-                value < -10 -> return R.color.watch_red_200
-                value < -1 -> return R.color.watch_orange_200
-                value < 1 -> return R.color.watch_yellow_200
-                value < 5 -> return R.color.watch_green_200
-                value < 10 -> return R.color.watch_teal_200
-                else -> R.color.watch_blue_200
-            }
+    private fun difficultyColorRes(
+        blueRes: Int,
+        tealRes: Int,
+        greenRes: Int,
+        darkGreenRes: Int,
+    ): Int =
+        when (TaskDifficulty.valueOf(priority)) {
+            TaskDifficulty.TRIVIAL -> blueRes
+            TaskDifficulty.EASY -> tealRes
+            TaskDifficulty.MEDIUM -> greenRes
+            TaskDifficulty.HARD -> darkGreenRes
         }
+
+    val extraLightTaskColor: Int
+        get() =
+            difficultyColorRes(
+                R.color.watch_blue_200,
+                R.color.watch_teal_200,
+                R.color.watch_green_200,
+                R.color.watch_green_200,
+            )
 
     val lightTaskColor: Int
-        get() {
-            val value = value ?: 0.0
-            return when {
-                value < -20 -> return R.color.watch_maroon_100
-                value < -10 -> return R.color.watch_red_100
-                value < -1 -> return R.color.watch_orange_100
-                value < 1 -> return R.color.watch_yellow_100
-                value < 5 -> return R.color.watch_green_100
-                value < 10 -> return R.color.watch_teal_100
-                else -> R.color.watch_blue_100
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.watch_blue_100,
+                R.color.watch_teal_100,
+                R.color.watch_green_100,
+                R.color.watch_green_100,
+            )
 
     val mediumTaskColor: Int
-        get() {
-            val value = value ?: 0.0
-            return when {
-                value < -20 -> return R.color.watch_maroon_10
-                value < -10 -> return R.color.watch_red_10
-                value < -1 -> return R.color.watch_orange_10
-                value < 1 -> return R.color.watch_yellow_10
-                value < 5 -> return R.color.watch_green_10
-                value < 10 -> return R.color.watch_teal_10
-                else -> R.color.watch_blue_10
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.watch_blue_10,
+                R.color.watch_teal_10,
+                R.color.watch_green_10,
+                R.color.watch_green_10,
+            )
 
     override fun equals(other: Any?): Boolean {
         if (other == null) {

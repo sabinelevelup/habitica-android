@@ -15,6 +15,7 @@ import com.habitrpg.common.habitica.helpers.MarkdownParser
 import com.habitrpg.shared.habitica.models.tasks.Attribute
 import com.habitrpg.shared.habitica.models.tasks.BaseTask
 import com.habitrpg.shared.habitica.models.tasks.Frequency
+import com.habitrpg.shared.habitica.models.tasks.TaskDifficulty
 import com.habitrpg.shared.habitica.models.tasks.TaskType
 import io.realm.RealmList
 import io.realm.RealmObject
@@ -199,135 +200,108 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             }
         }
 
-    val lightestTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_700
-                this.value < -10 -> return R.color.red_700
-                this.value < -1 -> return R.color.orange_700
-                this.value < 1 -> return R.color.yellow_700
-                this.value < 5 -> return R.color.green_700
-                this.value < 10 -> return R.color.teal_700
-                else -> R.color.blue_700
-            }
+    private fun difficultyColorRes(
+        blueRes: Int,
+        tealRes: Int,
+        greenRes: Int,
+        darkGreenRes: Int,
+    ): Int =
+        when (TaskDifficulty.valueOf(priority)) {
+            TaskDifficulty.TRIVIAL -> blueRes
+            TaskDifficulty.EASY -> tealRes
+            TaskDifficulty.MEDIUM -> greenRes
+            TaskDifficulty.HARD -> darkGreenRes
         }
+
+    val lightestTaskColor: Int
+        get() =
+            difficultyColorRes(
+                R.color.blue_700,
+                R.color.teal_700,
+                R.color.green_700,
+                R.color.green_600,
+            )
 
     val extraExtraLightTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_600
-                this.value < -10 -> return R.color.red_600
-                this.value < -1 -> return R.color.orange_600
-                this.value < 1 -> return R.color.yellow_600
-                this.value < 5 -> return R.color.green_600
-                this.value < 10 -> return R.color.teal_600
-                else -> R.color.blue_600
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_600,
+                R.color.teal_600,
+                R.color.green_600,
+                R.color.green_500,
+            )
 
     val extraLightTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_500
-                this.value < -10 -> return R.color.red_500
-                this.value < -1 -> return R.color.orange_500
-                this.value < 1 -> return R.color.yellow_500
-                this.value < 5 -> return R.color.green_500
-                this.value < 10 -> return R.color.teal_500
-                else -> R.color.blue_500
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_500,
+                R.color.teal_500,
+                R.color.green_500,
+                R.color.green_500,
+            )
 
     val lightTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_100
-                this.value < -10 -> return R.color.red_100
-                this.value < -1 -> return R.color.orange_100
-                this.value < 1 -> return R.color.yellow_100
-                this.value < 5 -> return R.color.green_100
-                this.value < 10 -> return R.color.teal_100
-                else -> R.color.blue_100
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_100,
+                R.color.teal_100,
+                R.color.green_100,
+                R.color.green_50,
+            )
 
     val mediumTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_50
-                this.value < -10 -> return R.color.red_50
-                this.value < -1 -> return R.color.orange_50
-                this.value < 1 -> return R.color.yellow_10
-                this.value < 5 -> return R.color.green_50
-                this.value < 10 -> return R.color.teal_50
-                else -> R.color.blue_50
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_50,
+                R.color.teal_50,
+                R.color.green_50,
+                R.color.green_10,
+            )
 
     val darkTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_10
-                this.value < -10 -> return R.color.red_10
-                this.value < -1 -> return R.color.orange_10
-                this.value < 1 -> return R.color.yellow_5
-                this.value < 5 -> return R.color.green_10
-                this.value < 10 -> return R.color.teal_10
-                else -> R.color.blue_10
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_10,
+                R.color.teal_10,
+                R.color.green_10,
+                R.color.green_10,
+            )
 
     val extraDarkTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_1
-                this.value < -10 -> return R.color.red_1
-                this.value < -1 -> return R.color.orange_1
-                this.value < 1 -> return R.color.yellow_1
-                this.value < 5 -> return R.color.green_1
-                this.value < 10 -> return R.color.teal_1
-                else -> R.color.blue_1
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_1,
+                R.color.teal_1,
+                R.color.green_1,
+                R.color.green_1,
+            )
 
     val lowSaturationTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_sub_text
-                this.value < -10 -> return R.color.red_sub_text
-                this.value < -1 -> return R.color.orange_sub_text
-                this.value < 1 -> return R.color.yellow_sub_text
-                this.value < 5 -> return R.color.green_sub_text
-                this.value < 10 -> return R.color.teal_sub_text
-                else -> R.color.blue_sub_text
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_sub_text,
+                R.color.teal_sub_text,
+                R.color.green_sub_text,
+                R.color.green_sub_text,
+            )
 
     val extraExtraDarkTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_0
-                this.value < -10 -> return R.color.red_0
-                this.value < -1 -> return R.color.orange_0
-                this.value < 1 -> return R.color.yellow_0
-                this.value < 5 -> return R.color.green_0
-                this.value < 10 -> return R.color.teal_0
-                else -> R.color.blue_0
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_0,
+                R.color.teal_0,
+                R.color.green_0,
+                R.color.green_0,
+            )
 
     val darkestTaskColor: Int
-        get() {
-            return when {
-                this.value < -20 -> return R.color.maroon_00
-                this.value < -10 -> return R.color.red_00
-                this.value < -1 -> return R.color.orange_00
-                this.value < 1 -> return R.color.yellow_00
-                this.value < 5 -> return R.color.green_00
-                this.value < 10 -> return R.color.teal_00
-                else -> R.color.blue_00
-            }
-        }
+        get() =
+            difficultyColorRes(
+                R.color.blue_00,
+                R.color.teal_00,
+                R.color.green_00,
+                R.color.green_00,
+            )
 
     val isChecklistDisplayActive: Boolean
         get() = this.checklist?.size != this.completedChecklistCount
@@ -819,6 +793,21 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
         const val FILTER_GRAY = "gray"
         const val FILTER_DATED = "dated"
         const val FILTER_COMPLETED = "completed"
+
+        fun forcedThemeForPriority(priority: Float): String =
+            when (TaskDifficulty.valueOf(priority)) {
+                TaskDifficulty.TRIVIAL -> "blue"
+                TaskDifficulty.EASY -> "teal"
+                TaskDifficulty.MEDIUM, TaskDifficulty.HARD -> "green"
+            }
+
+        fun mediumShadeColorResForPriority(priority: Float): Int =
+            when (TaskDifficulty.valueOf(priority)) {
+                TaskDifficulty.TRIVIAL -> R.color.blue_50
+                TaskDifficulty.EASY -> R.color.teal_50
+                TaskDifficulty.MEDIUM -> R.color.green_50
+                TaskDifficulty.HARD -> R.color.green_10
+            }
 
         @JvmField
         val CREATOR: Parcelable.Creator<Task> =

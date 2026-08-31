@@ -339,15 +339,19 @@ abstract class HabiticaBaseApplication : Application(), Application.ActivityLife
     }
 
     private fun setupNotifications() {
-        FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
-            if (!task.isSuccessful) {
-                Log.w("Token", "getInstanceId failed", task.exception)
-                return@addOnCompleteListener
+        try {
+            FirebaseInstallations.getInstance().id.addOnCompleteListener { task ->
+                if (!task.isSuccessful) {
+                    Log.w("Token", "getInstanceId failed", task.exception)
+                    return@addOnCompleteListener
+                }
+                val token = task.result
+                if (BuildConfig.DEBUG) {
+                    Log.d("Token", "Firebase Notification Token: $token")
+                }
             }
-            val token = task.result
-            if (BuildConfig.DEBUG) {
-                Log.d("Token", "Firebase Notification Token: $token")
-            }
+        } catch (e: Exception) {
+            Log.w("Token", "Firebase Installations unavailable", e)
         }
     }
 

@@ -630,7 +630,7 @@ open class TaskRecyclerViewFragment :
         bundle.putString(TaskFormActivity.TASK_TYPE_KEY, task.type?.value)
         bundle.putString(TaskFormActivity.TASK_ID_KEY, task.id)
         bundle.putString(TaskFormActivity.GROUP_ID_KEY, task.group?.groupID)
-        bundle.putDouble(TaskFormActivity.TASK_VALUE_KEY, task.value)
+        bundle.putFloat(TaskFormActivity.TASK_PRIORITY_KEY, task.priority)
 
         lifecycleScope.launchCatching {
             val id =
