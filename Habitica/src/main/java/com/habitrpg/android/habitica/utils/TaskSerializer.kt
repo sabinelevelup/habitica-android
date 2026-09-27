@@ -92,6 +92,10 @@ class TaskSerializer : JsonSerializer<Task>, JsonDeserializer<Task> {
         task.updatedAt = context.deserialize(obj.get("updatedAt"), Date::class.java)
         task.startDate = context.deserialize(obj.get("startDate"), Date::class.java)
         task.isDue = obj.get("isDue")?.asBoolean
+        if (obj.has("history") && obj.get("history").isJsonArray) {
+            task.lastCompletedParsedFromHistory = true
+            task.lastCompletedAt = lastCompletionFromHistory(obj.getAsJsonArray("history"), context)
+        }
         if (obj.has("nextDue")) {
             task.nextDue = RealmList()
             for (due in obj.getAsJsonArray("nextDue")) {
@@ -245,6 +249,44 @@ class TaskSerializer : JsonSerializer<Task>, JsonDeserializer<Task> {
             jsonArray.add(jsonObject)
         }
         return jsonArray
+    }
+
+    companion object {
+        /**
+         * Daily history includes cron misses as well as check-offs.
+         * A check-off is the last time value increased (from the default of 0).
+         */
+        internal fun lastCompletionFromHistory(
+            history: JsonArray,
+            context: JsonDeserializationContext
+        ): Date? {
+            var previousValue = 0.0
+            var lastCompleted: Date? = null
+            for (element in history) {
+                if (!element.isJsonObject) continue
+                val entry = element.asJsonObject
+                val valueElement = entry.get("value") ?: continue
+                if (!valueElement.isJsonPrimitive || !valueElement.asJsonPrimitive.isNumber) continue
+                val value = valueElement.asDouble
+                if (value > previousValue) {
+                    parseHistoryDate(entry.get("date"), context)?.let { lastCompleted = it }
+                }
+                previousValue = value
+            }
+            return lastCompleted
+        }
+
+        private fun parseHistoryDate(
+            dateElement: JsonElement?,
+            context: JsonDeserializationContext
+        ): Date? {
+            if (dateElement == null || dateElement.isJsonNull) return null
+            return if (dateElement.isJsonPrimitive && dateElement.asJsonPrimitive.isNumber) {
+                Date(dateElement.asLong)
+            } else {
+                context.deserialize(dateElement, Date::class.java)
+            }
+        }
     }
 }
 

@@ -622,7 +622,7 @@ class ApiClientImpl(
         return process { apiService.hatchPet(eggKey, hatchingPotionKey) }
     }
 
-    override suspend fun getTasks(): TaskList? = process { apiService.getTasks(false) }
+    override suspend fun getTasks(): TaskList? = process { apiService.getTasks(true) }
 
     override suspend fun getTasks(type: String): TaskList? {
         return process { apiService.getTasks(type) }

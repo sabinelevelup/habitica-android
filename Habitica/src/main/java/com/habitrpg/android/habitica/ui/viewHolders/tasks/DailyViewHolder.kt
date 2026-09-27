@@ -1,12 +1,16 @@
 package com.habitrpg.android.habitica.ui.viewHolders.tasks
 
 import android.view.View
+import com.habitrpg.android.habitica.R
 import com.habitrpg.android.habitica.helpers.GroupPlanInfoProvider
 import com.habitrpg.android.habitica.models.tasks.ChecklistItem
 import com.habitrpg.android.habitica.models.tasks.Task
 import com.habitrpg.common.habitica.helpers.LanguageHelper
 import com.habitrpg.shared.habitica.models.responses.TaskDirection
 import java.text.DateFormat
+import java.time.LocalDate
+import java.time.ZoneId
+import java.time.temporal.ChronoUnit
 import java.util.Calendar
 import java.util.Date
 
@@ -79,13 +83,36 @@ class DailyViewHolder(
 
     override fun configureSpecialTaskTextView(task: Task) {
         super.configureSpecialTaskTextView(task)
-        if ((task.streak ?: 0) > 0 && !task.isGroupTask) {
-            this.streakTextView.text = task.streak.toString()
+        val lastCompleted = task.effectiveLastCompletedAt(null)
+        if (lastCompleted != null && !task.isGroupTask) {
+            this.streakTextView.text = formatLastCompleted(lastCompleted)
             this.streakTextView.visibility = View.VISIBLE
-            this.streakIconView.visibility = View.VISIBLE
+            this.streakIconView.visibility = View.GONE
         } else {
             this.streakTextView.visibility = View.GONE
             this.streakIconView.visibility = View.GONE
+        }
+    }
+
+    private fun formatLastCompleted(date: Date): String {
+        val days =
+            ChronoUnit.DAYS.between(
+                date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                LocalDate.now()
+            ).toInt().coerceAtLeast(0)
+        return when {
+            days <= 30 ->
+                itemView.resources.getQuantityString(R.plurals.x_days, days, days)
+
+            days <= 90 -> {
+                val weeks = (days / 7).coerceAtLeast(1)
+                itemView.resources.getQuantityString(R.plurals.last_completed_weeks, weeks, weeks)
+            }
+
+            else -> {
+                val months = (days / 30).coerceAtLeast(1)
+                itemView.resources.getQuantityString(R.plurals.last_completed_months, months, months)
+            }
         }
     }
 

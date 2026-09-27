@@ -202,6 +202,9 @@ class TaskRepositoryImpl(
 
             if (TaskType.DAILY == bgTask.type || TaskType.TODO == bgTask.type) {
                 bgTask.completeForUser(authenticationHandler.currentUserID ?: "", up)
+                if (TaskType.DAILY == bgTask.type && up) {
+                    bgTask.lastCompletedAt = Date()
+                }
                 if (bgTask.isGroupTask) {
                     val entry =
                         bgTask.group?.assignedUsersDetail?.firstOrNull { it.assignedUserID == user.id }
@@ -223,6 +226,7 @@ class TaskRepositoryImpl(
                         sibling.completed = bgTask.completed
                         sibling.counterUp = bgTask.counterUp
                         sibling.counterDown = bgTask.counterDown
+                        sibling.lastCompletedAt = bgTask.lastCompletedAt
                         if (sibling.isGroupTask) {
                             sibling.group?.assignedUsersDetail
                                 ?.firstOrNull { detail -> detail.assignedUserID == user.id }

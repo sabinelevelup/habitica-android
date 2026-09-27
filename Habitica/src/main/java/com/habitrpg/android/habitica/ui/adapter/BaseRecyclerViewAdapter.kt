@@ -43,10 +43,13 @@ abstract class BaseRecyclerViewAdapter<T : BaseMainObject, VH : RecyclerView.Vie
         return null
     }
 
-    var data: List<T> = emptyList()
+    private var items: List<T> = emptyList()
+
+    var data: List<T>
+        get() = items
         set(value) {
-            val diffCallback = getDiffCallback(data, value)
-            field = value
+            val diffCallback = getDiffCallback(items, value)
+            items = value
             if (diffCallback != null) {
                 val diffResult = DiffUtil.calculateDiff(diffCallback)
                 diffResult.dispatchUpdatesTo(this)
@@ -55,13 +58,18 @@ abstract class BaseRecyclerViewAdapter<T : BaseMainObject, VH : RecyclerView.Vie
             }
         }
 
+    /** Updates backing data without notifying — used while ItemTouchHelper is dragging. */
+    protected fun replaceDataSilently(value: List<T>) {
+        items = value
+    }
+
     override fun getItemCount(): Int {
-        return data.size
+        return items.size
     }
 
     open fun getItem(position: Int): T? {
-        return if (position >= 0 && data.size > position) {
-            data[position]
+        return if (position >= 0 && items.size > position) {
+            items[position]
         } else {
             null
         }

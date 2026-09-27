@@ -280,11 +280,10 @@ open class TaskRecyclerViewFragment :
                     viewHolder: RecyclerView.ViewHolder,
                     target: RecyclerView.ViewHolder
                 ): Boolean {
-                    recyclerAdapter?.notifyItemMoved(
+                    return recyclerAdapter?.moveItem(
                         viewHolder.bindingAdapterPosition,
                         target.bindingAdapterPosition
-                    )
-                    return true
+                    ) == true
                 }
 
                 override fun onSwiped(
@@ -336,30 +335,43 @@ open class TaskRecyclerViewFragment :
                     validTaskId: String?,
                     viewHolder: RecyclerView.ViewHolder
                 ) {
-                    if (validTaskId != null) {
-                        var newPosition = viewHolder.bindingAdapterPosition
-                        if (viewModel.filterCount(taskType) > 0) {
-                            newPosition =
-                                if ((newPosition + 1) >= (recyclerAdapter?.data?.size ?: 0)) {
-                                    recyclerAdapter?.data?.get(newPosition - 1)?.position ?: newPosition
-                                } else {
-                                    (
-                                        recyclerAdapter?.data?.get(newPosition + 1)?.position
-                                            ?: newPosition
-                                        ) - 1
+                    if (validTaskId == null) return
+                    var dataIndex = viewHolder.bindingAdapterPosition
+                    if (recyclerAdapter?.showAdventureGuide == true) {
+                        dataIndex -= 1
+                    }
+                    val displayed = recyclerAdapter?.data.orEmpty()
+                    if (dataIndex < 0 || dataIndex >= displayed.size) return
+
+                    val moved = displayed[dataIndex]
+                    var newPosition = dataIndex
+
+                    // When the list isn't in raw position order (filters / tag / effort sort),
+                    // place the task relative to its new neighbors' stored positions so
+                    // within-group order is preserved as the secondary sort key.
+                    if (viewModel.filterCount(taskType) > 0 || viewModel.isGroupedSortActive(taskType)) {
+                        val above = displayed.getOrNull(dataIndex - 1)
+                        val below = displayed.getOrNull(dataIndex + 1)
+                        newPosition =
+                            when {
+                                above != null -> {
+                                    val abovePos = above.position
+                                    if (moved.position < abovePos) abovePos else abovePos + 1
                                 }
-                        }
-                        // Factor in if adventure guide is shown.
-                        if (recyclerAdapter?.showAdventureGuide == true) {
-                            newPosition -= 1
-                        }
-                        lifecycleScope.launchCatching {
-                            taskRepository.updateTaskPosition(
-                                taskType,
-                                validTaskId,
-                                newPosition
-                            )
-                        }
+                                below != null -> {
+                                    val belowPos = below.position
+                                    if (moved.position < belowPos) belowPos - 1 else belowPos
+                                }
+                                else -> 0
+                            }.coerceAtLeast(0)
+                    }
+
+                    lifecycleScope.launchCatching {
+                        taskRepository.updateTaskPosition(
+                            taskType,
+                            validTaskId,
+                            newPosition
+                        )
                     }
                 }
             }

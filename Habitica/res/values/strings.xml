@@ -63,7 +63,8 @@
     <string name="title">Title</string>
     <string name="notes">Notes</string>
     <string name="difficulty">Difficulty</string>
-    <string name="sort_by_difficulty">Sort by difficulty</string>
+    <string name="sort_by_difficulty">Order by effort</string>
+    <string name="sort_by_tags">Sort by tags</string>
     <string name="tags">Tags</string>
     <string name="start_date">Start Date</string>
     <string name="positive_habit_form">Positive</string>
@@ -246,6 +247,14 @@
     <plurals name="x_days">
         <item quantity="one">%d Day</item>
         <item quantity="other">%d Days</item>
+    </plurals>
+    <plurals name="last_completed_weeks">
+        <item quantity="one">%d Week</item>
+        <item quantity="other">%d Weeks</item>
+    </plurals>
+    <plurals name="last_completed_months">
+        <item quantity="one">%d Month</item>
+        <item quantity="other">%d Months</item>
     </plurals>
     <plurals name="x_hours">
         <item quantity="one">%d Hour</item>

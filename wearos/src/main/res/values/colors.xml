@@ -26,6 +26,10 @@
     <color name="watch_teal_100">#3BCAD7</color>
     <color name="watch_teal_10">#26A0AB</color>
 
+    <color name="watch_mint_200">#99E5DC</color>
+    <color name="watch_mint_100">#30CBB3</color>
+    <color name="watch_mint_10">#23A390</color>
+
     <color name="watch_blue_500">#EAF8FF</color>
     <color name="watch_blue_200">#B4DCF0</color>
     <color name="watch_blue_100">#50B5E9</color>

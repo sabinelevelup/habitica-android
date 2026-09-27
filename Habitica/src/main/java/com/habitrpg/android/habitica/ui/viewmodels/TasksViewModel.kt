@@ -199,7 +199,10 @@ constructor(
 
     fun filterCount(type: TaskType?): Int {
         var count = this.tags.size + if (isTaskFilterActive(type)) 1 else 0
-        if (type == TaskType.TODO && isTodoSortByDifficulty()) {
+        if (type != null && supportsSortByDifficulty(type) && isSortByDifficulty(type)) {
+            count++
+        }
+        if (type != null && supportsSortByTags(type) && isSortByTags(type)) {
             count++
         }
         return count
@@ -309,14 +312,99 @@ constructor(
         return sharedPreferences.getString("filter_${type.value}", Task.FILTER_ALL) ?: if (TaskType.TODO == type) Task.FILTER_ACTIVE else Task.FILTER_ALL
     }
 
-    fun isTodoSortByDifficulty(): Boolean {
-        return sharedPreferences.getBoolean(TODO_SORT_BY_DIFFICULTY_KEY, false)
+    fun supportsSortByDifficulty(type: TaskType): Boolean {
+        return type == TaskType.TODO || type == TaskType.HABIT
     }
 
-    fun setTodoSortByDifficulty(enabled: Boolean) {
-        sharedPreferences.edit { putBoolean(TODO_SORT_BY_DIFFICULTY_KEY, enabled) }
-        filterSets[TaskType.TODO]?.value =
-            Triple(searchQuery, getActiveFilter(TaskType.TODO), tags)
+    fun isSortByDifficulty(type: TaskType): Boolean {
+        return sharedPreferences.getBoolean(sortByDifficultyKey(type), false)
+    }
+
+    fun setSortByDifficulty(type: TaskType, enabled: Boolean) {
+        if (!supportsSortByDifficulty(type)) return
+        sharedPreferences.edit { putBoolean(sortByDifficultyKey(type), enabled) }
+        filterSets[type]?.value = Triple(searchQuery, getActiveFilter(type), tags)
+    }
+
+    private fun sortByDifficultyKey(type: TaskType): String {
+        return when (type) {
+            TaskType.TODO -> TODO_SORT_BY_DIFFICULTY_KEY
+            TaskType.HABIT -> HABIT_SORT_BY_DIFFICULTY_KEY
+            else -> "${type.value}_sort_by_difficulty"
+        }
+    }
+
+    fun supportsSortByTags(type: TaskType): Boolean {
+        return type == TaskType.DAILY || type == TaskType.HABIT || type == TaskType.TODO
+    }
+
+    fun isSortByTags(type: TaskType): Boolean {
+        return sharedPreferences.getBoolean(sortByTagsKey(type), false)
+    }
+
+    fun setSortByTags(type: TaskType, enabled: Boolean) {
+        if (!supportsSortByTags(type)) return
+        sharedPreferences.edit { putBoolean(sortByTagsKey(type), enabled) }
+        filterSets[type]?.value = Triple(searchQuery, getActiveFilter(type), tags)
+    }
+
+    private fun sortByTagsKey(type: TaskType): String {
+        return when (type) {
+            TaskType.DAILY -> DAILY_SORT_BY_TAGS_KEY
+            TaskType.HABIT -> HABIT_SORT_BY_TAGS_KEY
+            TaskType.TODO -> TODO_SORT_BY_TAGS_KEY
+            else -> "${type.value}_sort_by_tags"
+        }
+    }
+
+    /**
+     * In-memory sort for tag order (and combined tag + effort).
+     * Tasks are listed once; with multiple tags, the alphabetically first tag (0-9 A-Z) is used.
+     */
+    fun applyAdditionalSort(tasks: List<Task>): List<Task> {
+        if (tasks.isEmpty()) return tasks
+        val type = tasks.firstOrNull()?.type ?: return tasks
+        val byTags = supportsSortByTags(type) && isSortByTags(type)
+        val byEffort = supportsSortByDifficulty(type) && isSortByDifficulty(type)
+        if (!byTags) return tasks
+        return if (byEffort) {
+            tasks.sortedWith(
+                compareBy<Task> { it.primaryTagSortKey() }
+                    .thenBy { it.priority }
+                    .thenBy { it.position }
+            )
+        } else {
+            tasks.sortedWith(
+                compareBy<Task> { it.primaryTagSortKey() }
+                    .thenBy { it.position }
+            )
+        }
+    }
+
+    fun isGroupedSortActive(type: TaskType?): Boolean {
+        if (type == null) return false
+        return (supportsSortByDifficulty(type) && isSortByDifficulty(type)) ||
+            (supportsSortByTags(type) && isSortByTags(type))
+    }
+
+    fun sameSortGroup(
+        a: Task,
+        b: Task
+    ): Boolean {
+        val type = a.type ?: return true
+        if (type != b.type) return false
+        if (!isGroupedSortActive(type)) return true
+        val byTags = supportsSortByTags(type) && isSortByTags(type)
+        val byEffort = supportsSortByDifficulty(type) && isSortByDifficulty(type)
+        if (byTags &&
+            !a.primaryTagSortKey().equals(b.primaryTagSortKey(), ignoreCase = true)
+        ) {
+            return false
+        }
+        if (byEffort && a.priority != b.priority) {
+            return false
+        }
+        return true
     }
 
     fun createQuery(unfilteredData: OrderedRealmCollection<Task>): RealmQuery<Task>? {
@@ -365,8 +453,17 @@ constructor(
                 }
             }
             if (activeFilter != Task.FILTER_DATED) {
+                val byEffort =
+                    taskType != null &&
+                        supportsSortByDifficulty(taskType) &&
+                        isSortByDifficulty(taskType)
+                val byTags =
+                    taskType != null &&
+                        supportsSortByTags(taskType) &&
+                        isSortByTags(taskType)
+                // Tag sort is applied in-memory after the query; effort-only can use Realm.
                 query =
-                    if (taskType == TaskType.TODO && isTodoSortByDifficulty()) {
+                    if (byEffort && !byTags) {
                         query.sort("priority", Sort.ASCENDING, "position", Sort.ASCENDING)
                     } else {
                         query.sort("position", Sort.ASCENDING, "dateCreated", Sort.DESCENDING)
@@ -431,5 +528,9 @@ constructor(
 
     companion object {
         private const val TODO_SORT_BY_DIFFICULTY_KEY = "todo_sort_by_difficulty"
+        private const val HABIT_SORT_BY_DIFFICULTY_KEY = "habit_sort_by_difficulty"
+        private const val DAILY_SORT_BY_TAGS_KEY = "daily_sort_by_tags"
+        private const val HABIT_SORT_BY_TAGS_KEY = "habit_sort_by_tags"
+        private const val TODO_SORT_BY_TAGS_KEY = "todo_sort_by_tags"
     }
 }

@@ -154,6 +154,11 @@ class RewardsRecyclerViewAdapter(
 
     override fun filter() { /* no-on */ }
 
+    override fun moveItem(
+        fromAdapterPosition: Int,
+        toAdapterPosition: Int
+    ): Boolean = false
+
     companion object {
         private const val VIEWTYPE_CUSTOM_REWARD = 0
         private const val VIEWTYPE_IN_APP_REWARD = 3

@@ -121,11 +121,35 @@ abstract class RealmBaseTasksRecyclerViewAdapter(
         if (unfilteredData is OrderedRealmCollection) {
             val query = viewModel.createQuery(unfilteredData)
             if (query != null) {
-                data = query.findAll()
+                data = viewModel.applyAdditionalSort(query.findAll())
             }
         } else {
-            data = unfilteredData
+            data = viewModel.applyAdditionalSort(unfilteredData)
         }
+    }
+
+    override fun moveItem(
+        fromAdapterPosition: Int,
+        toAdapterPosition: Int
+    ): Boolean {
+        val fromIndex = dataIndex(fromAdapterPosition)
+        val toIndex = dataIndex(toAdapterPosition)
+        if (fromIndex < 0 || toIndex < 0 || fromIndex >= data.size || toIndex >= data.size) {
+            return false
+        }
+        if (!viewModel.sameSortGroup(data[fromIndex], data[toIndex])) {
+            return false
+        }
+        val mutable = data.toMutableList()
+        val item = mutable.removeAt(fromIndex)
+        mutable.add(toIndex, item)
+        replaceDataSilently(mutable)
+        notifyItemMoved(fromAdapterPosition, toAdapterPosition)
+        return true
+    }
+
+    private fun dataIndex(adapterPosition: Int): Int {
+        return if (showAdventureGuide) adapterPosition - 1 else adapterPosition
     }
 }
 

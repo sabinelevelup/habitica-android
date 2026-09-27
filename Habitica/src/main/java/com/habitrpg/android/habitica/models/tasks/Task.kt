@@ -96,6 +96,12 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
     override var streak: Int? = 0
     var startDate: Date? = null
     var repeat: Days? = null
+    // Last time this daily was checked off (from API history or local scoring)
+    var lastCompletedAt: Date? = null
+
+    // True when lastCompletedAt was derived from API history (including "never completed").
+    @Ignore
+    var lastCompletedParsedFromHistory: Boolean = false
 
     // todos
     @SerializedName("date")
@@ -181,6 +187,19 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
         return zonedDueDate?.toLocalDate()?.isBefore(LocalDate.now())
     }
 
+    fun effectiveLastCompletedAt(userID: String?): Date? {
+        if (type != TaskType.DAILY) return null
+        if (completed) return lastCompletedAt ?: Date()
+        lastCompletedAt?.let { return it }
+        if (isGroupTask) {
+            group?.assignedUsersDetail
+                ?.firstOrNull { it.assignedUserID == userID }
+                ?.completedDate
+                ?.let { return it }
+        }
+        return null
+    }
+
     val streakString: String?
         get() {
             return if (counterUp != null && (
@@ -218,7 +237,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_700,
                 R.color.teal_700,
-                R.color.green_700,
+                R.color.mint_700,
                 R.color.green_600,
             )
 
@@ -227,7 +246,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_600,
                 R.color.teal_600,
-                R.color.green_600,
+                R.color.mint_600,
                 R.color.green_500,
             )
 
@@ -236,7 +255,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_500,
                 R.color.teal_500,
-                R.color.green_500,
+                R.color.mint_500,
                 R.color.green_500,
             )
 
@@ -245,7 +264,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_100,
                 R.color.teal_100,
-                R.color.green_100,
+                R.color.mint_100,
                 R.color.green_50,
             )
 
@@ -254,7 +273,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_50,
                 R.color.teal_50,
-                R.color.green_50,
+                R.color.mint_50,
                 R.color.green_10,
             )
 
@@ -263,7 +282,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_10,
                 R.color.teal_10,
-                R.color.green_10,
+                R.color.mint_10,
                 R.color.green_10,
             )
 
@@ -272,7 +291,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_1,
                 R.color.teal_1,
-                R.color.green_1,
+                R.color.mint_1,
                 R.color.green_1,
             )
 
@@ -281,7 +300,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_sub_text,
                 R.color.teal_sub_text,
-                R.color.green_sub_text,
+                R.color.mint_sub_text,
                 R.color.green_sub_text,
             )
 
@@ -290,7 +309,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_0,
                 R.color.teal_0,
-                R.color.green_0,
+                R.color.mint_0,
                 R.color.green_0,
             )
 
@@ -299,7 +318,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.blue_00,
                 R.color.teal_00,
-                R.color.green_00,
+                R.color.mint_00,
                 R.color.green_00,
             )
 
@@ -318,6 +337,19 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
 
     fun containsAllTagIds(tagIdList: List<String>): Boolean =
         tags?.mapTo(ArrayList()) { it.id }?.containsAll(tagIdList) ?: false
+
+    /**
+     * Alphabetically first tag name (case-insensitive, 0-9 then A-Z).
+     * Empty/untagged sorts last.
+     */
+    fun primaryTagSortKey(): String {
+        val names =
+            tags
+                ?.mapNotNull { tag -> tag.name.takeIf { it.isNotBlank() } }
+                .orEmpty()
+        if (names.isEmpty()) return "\uFFFF"
+        return names.minWith(String.CASE_INSENSITIVE_ORDER)
+    }
 
     fun checkIfDue(): Boolean = isDue == true
 
@@ -805,7 +837,7 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
             when (TaskDifficulty.valueOf(priority)) {
                 TaskDifficulty.TRIVIAL -> R.color.blue_50
                 TaskDifficulty.EASY -> R.color.teal_50
-                TaskDifficulty.MEDIUM -> R.color.green_50
+                TaskDifficulty.MEDIUM -> R.color.mint_50
                 TaskDifficulty.HARD -> R.color.green_10
             }
 

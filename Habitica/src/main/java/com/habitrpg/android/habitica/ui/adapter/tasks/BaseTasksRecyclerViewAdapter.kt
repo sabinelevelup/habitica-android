@@ -69,11 +69,11 @@ abstract class BaseTasksRecyclerViewAdapter<VH : BindableViewHolder<Task>>(
 
     fun filter() {
         if (this.viewModel.filterCount(taskType) == 0) {
-            filteredContent = content
+            filteredContent = viewModel.applyAdditionalSort(content ?: emptyList()).toMutableList()
         } else {
             filteredContent = ArrayList()
             content?.let {
-                filteredContent?.addAll(this.viewModel.filter(it))
+                filteredContent?.addAll(this.viewModel.applyAdditionalSort(this.viewModel.filter(it)))
             }
         }
 

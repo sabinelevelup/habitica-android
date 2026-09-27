@@ -80,6 +80,16 @@
     <color name="teal_10">#26A0AB</color>
     <color name="teal_5">#1A7078</color>
 
+    <!-- Midpoint between teal (easy) and green (hard) for medium difficulty -->
+    <color name="mint_700">#F4FDFB</color>
+    <color name="mint_600">#E8F5F5</color>
+    <color name="mint_500">#83F0DF</color>
+    <color name="mint_400">#9CDED1</color>
+    <color name="mint_100">#30CBB3</color>
+    <color name="mint_50">#2AB6A1</color>
+    <color name="mint_10">#21A18F</color>
+    <color name="mint_5">#187869</color>
+
     <color name="blue_700">#FAFDFF</color>
     <color name="blue_600">#EEF5F9</color>
     <color name="blue_500">#a9dcf6</color>
@@ -109,6 +119,7 @@
     <color name="red_1">#6c0406</color>
     <color name="blue_1">#033f5e</color>
     <color name="teal_1">#005158</color>
+    <color name="mint_1">#005448</color>
     <color name="green_1">#005737</color>
     <color name="yellow_1">#794b00</color>
     <color name="orange_1">#7f3300</color>
@@ -118,6 +129,7 @@
     <color name="red_0">#3D2828</color>
     <color name="blue_0">#28373D</color>
     <color name="teal_0">#283C3D</color>
+    <color name="mint_0">#283D3A</color>
     <color name="green_0">#283D36</color>
     <color name="yellow_0">#3D3528</color>
     <color name="orange_0">#3D3028</color>
@@ -127,6 +139,7 @@
     <color name="red_00">#261C1C</color>
     <color name="blue_00">#191D21</color>
     <color name="teal_00">#1C2526</color>
+    <color name="mint_00">#1C2624</color>
     <color name="green_00">#1C2622</color>
     <color name="yellow_00">#26221C</color>
     <color name="orange_00">#26201C</color>
@@ -137,6 +150,7 @@
     <color name="orange_sub_text">#AB8165</color>
     <color name="yellow_sub_text">#AB9065</color>
     <color name="green_sub_text">#65AB94</color>
+    <color name="mint_sub_text">#65A9A0</color>
     <color name="teal_sub_text">#65A7AB</color>
     <color name="blue_sub_text">#6594AB</color>
 

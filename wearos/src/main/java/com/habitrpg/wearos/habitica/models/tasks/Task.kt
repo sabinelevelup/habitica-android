@@ -109,7 +109,7 @@ open class Task() : Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.watch_blue_200,
                 R.color.watch_teal_200,
-                R.color.watch_green_200,
+                R.color.watch_mint_200,
                 R.color.watch_green_200,
             )
 
@@ -118,7 +118,7 @@ open class Task() : Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.watch_blue_100,
                 R.color.watch_teal_100,
-                R.color.watch_green_100,
+                R.color.watch_mint_100,
                 R.color.watch_green_100,
             )
 
@@ -127,7 +127,7 @@ open class Task() : Parcelable, BaseTask {
             difficultyColorRes(
                 R.color.watch_blue_10,
                 R.color.watch_teal_10,
-                R.color.watch_green_10,
+                R.color.watch_mint_10,
                 R.color.watch_green_10,
             )
 

@@ -80,7 +80,19 @@ class RealmTaskLocalRepository(realm: Realm) :
         removeOldReminders(allReminders)
         removeOldChecklists(allChecklistItems)
 
-        executeTransaction { realm1 -> realm1.insertOrUpdate(sortedTasks) }
+        executeTransaction { realm1 ->
+            sortedTasks.forEach { task ->
+                if (task.lastCompletedAt == null &&
+                    !task.lastCompletedParsedFromHistory &&
+                    task.id != null
+                ) {
+                    val existing =
+                        realm1.where(Task::class.java).equalTo("id", task.id).findFirst()
+                    task.lastCompletedAt = existing?.lastCompletedAt
+                }
+            }
+            realm1.insertOrUpdate(sortedTasks)
+        }
     }
 
     override fun saveCompletedTodos(

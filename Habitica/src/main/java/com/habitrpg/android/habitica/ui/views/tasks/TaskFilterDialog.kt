@@ -61,21 +61,12 @@ class TaskFilterDialog(
                     binding.allTaskFilter.setText(R.string.active)
                     binding.secondTaskFilter.setText(R.string.dated)
                     binding.thirdTaskFilter.setText(R.string.completed)
-                    binding.todoSortWrapper.isVisible = true
-                    binding.todoSortByDifficultySwitch.setOnCheckedChangeListener(null)
-                    binding.todoSortByDifficultySwitch.isChecked = viewModel.isTodoSortByDifficulty()
-                    binding.todoSortByDifficultySwitch.setOnCheckedChangeListener { _, isChecked ->
-                        viewModel.setTodoSortByDifficulty(isChecked)
-                        filtersChanged()
-                    }
                 }
 
                 TaskType.REWARD -> {
                 }
             }
-            if (value != TaskType.TODO) {
-                binding.todoSortWrapper.isVisible = false
-            }
+            setupSortOptions(value)
             setActiveFilter(viewModel.getActiveFilter(value))
         }
 
@@ -110,9 +101,13 @@ class TaskFilterDialog(
             }
             setActiveFilter(null)
             setActiveTags(null)
-            if (taskType == TaskType.TODO) {
-                binding.todoSortByDifficultySwitch.isChecked = false
-                viewModel.setTodoSortByDifficulty(false)
+            if (viewModel.supportsSortByDifficulty(taskType)) {
+                binding.sortByEffortSwitch.isChecked = false
+                viewModel.setSortByDifficulty(taskType, false)
+            }
+            if (viewModel.supportsSortByTags(taskType)) {
+                binding.sortByTagsSwitch.isChecked = false
+                viewModel.setSortByTags(taskType, false)
             }
         }
 
@@ -365,6 +360,30 @@ class TaskFilterDialog(
             }
         }
         return -1
+    }
+
+    private fun setupSortOptions(type: TaskType) {
+        val effortSupported = viewModel.supportsSortByDifficulty(type)
+        binding.sortByEffortWrapper.isVisible = effortSupported
+        if (effortSupported) {
+            binding.sortByEffortSwitch.setOnCheckedChangeListener(null)
+            binding.sortByEffortSwitch.isChecked = viewModel.isSortByDifficulty(type)
+            binding.sortByEffortSwitch.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.setSortByDifficulty(type, isChecked)
+                filtersChanged()
+            }
+        }
+
+        val tagsSupported = viewModel.supportsSortByTags(type)
+        binding.sortByTagsWrapper.isVisible = tagsSupported
+        if (tagsSupported) {
+            binding.sortByTagsSwitch.setOnCheckedChangeListener(null)
+            binding.sortByTagsSwitch.isChecked = viewModel.isSortByTags(type)
+            binding.sortByTagsSwitch.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.setSortByTags(type, isChecked)
+                filtersChanged()
+            }
+        }
     }
 
     private fun setActiveFilter(activeFilter: String?) {

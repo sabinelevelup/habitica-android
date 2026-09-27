@@ -22,6 +22,12 @@ interface TaskRecyclerViewAdapter {
         adapterPosition1: Int
     )
 
+    /** Reorders the backing list and notifies the RecyclerView. Returns false if the move was rejected. */
+    fun moveItem(
+        fromAdapterPosition: Int,
+        toAdapterPosition: Int
+    ): Boolean
+
     fun notifyDataSetChanged()
 
     fun getItemViewType(position: Int): Int
