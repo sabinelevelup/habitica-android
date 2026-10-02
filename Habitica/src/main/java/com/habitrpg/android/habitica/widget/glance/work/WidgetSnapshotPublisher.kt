@@ -10,6 +10,7 @@ import com.habitrpg.android.habitica.widget.AvatarWidgetProvider
 import com.habitrpg.android.habitica.widget.glance.data.HabitButtonWidgetCache
 import com.habitrpg.android.habitica.widget.glance.data.WidgetSnapshotStore
 import com.habitrpg.android.habitica.widget.glance.data.loadDailyCountState
+import com.habitrpg.android.habitica.widget.glance.data.loadTodayDoneState
 import com.habitrpg.android.habitica.widget.glance.data.loadStatsState
 import com.habitrpg.android.habitica.widget.glance.data.loadTaskListState
 import com.habitrpg.android.habitica.widget.glance.data.widgetEntryPoint
@@ -18,6 +19,7 @@ import com.habitrpg.android.habitica.widget.glance.widgets.AvatarStatsGlanceWidg
 import com.habitrpg.android.habitica.widget.glance.widgets.DailiesCountGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.DailyTaskListGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.HabitButtonGlanceWidget
+import com.habitrpg.android.habitica.widget.glance.widgets.TodayDoneGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.TodoTaskListGlanceWidget
 import com.habitrpg.shared.habitica.models.tasks.TaskType
 import kotlinx.coroutines.Dispatchers
@@ -30,6 +32,7 @@ object WidgetSnapshotPublisher {
         publishStats(context)
         publishTaskLists(context)
         publishDailyCount(context)
+        publishTodayDone(context)
         publishHabitButtons(context)
         AvatarWidgetProvider.renderAll(context)
     }
@@ -80,6 +83,11 @@ object WidgetSnapshotPublisher {
     suspend fun publishDailyCount(context: Context) {
         val json = WidgetSnapshotStore.encodeDailyCount(loadDailyCountState(context))
         commit(context, DailiesCountGlanceWidget(), WidgetSnapshotStore.dailyCountKey, json)
+    }
+
+    suspend fun publishTodayDone(context: Context) {
+        val json = WidgetSnapshotStore.encodeTodayDone(loadTodayDoneState(context))
+        commit(context, TodayDoneGlanceWidget(), WidgetSnapshotStore.todayDoneKey, json)
     }
 
     suspend fun optimisticComplete(context: Context, taskId: String) {

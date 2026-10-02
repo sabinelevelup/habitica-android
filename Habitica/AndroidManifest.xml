@@ -344,6 +344,15 @@
             <meta-data android:name="android.appwidget.provider"
                 android:resource="@xml/dailies_count_widget_info" />
         </receiver>
+        <receiver android:name=".widget.TodayDoneWidgetReceiver"
+            android:label="@string/widget_today_done"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />
+            </intent-filter>
+            <meta-data android:name="android.appwidget.provider"
+                android:resource="@xml/today_done_widget_info" />
+        </receiver>
         <receiver android:name=".widget.AddTaskWidgetProvider"
             android:label="@string/widget_add_task"
             android:exported="false">

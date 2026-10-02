@@ -200,10 +200,17 @@ class TaskRepositoryImpl(
                 }
             }
 
+            if (TaskType.HABIT == bgTask.type && up) {
+                bgTask.lastCompletedAt = Date()
+            }
+
             if (TaskType.DAILY == bgTask.type || TaskType.TODO == bgTask.type) {
                 bgTask.completeForUser(authenticationHandler.currentUserID ?: "", up)
                 if (TaskType.DAILY == bgTask.type && up) {
                     bgTask.lastCompletedAt = Date()
+                }
+                if (TaskType.TODO == bgTask.type) {
+                    bgTask.lastCompletedAt = if (up) Date() else null
                 }
                 if (bgTask.isGroupTask) {
                     val entry =

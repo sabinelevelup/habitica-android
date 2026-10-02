@@ -189,7 +189,6 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
 
     fun effectiveLastCompletedAt(userID: String?): Date? {
         if (type != TaskType.DAILY) return null
-        if (completed) return lastCompletedAt ?: Date()
         lastCompletedAt?.let { return it }
         if (isGroupTask) {
             group?.assignedUsersDetail
@@ -349,6 +348,20 @@ open class Task : RealmObject, BaseMainObject, Parcelable, BaseTask {
                 .orEmpty()
         if (names.isEmpty()) return "\uFFFF"
         return names.minWith(String.CASE_INSENSITIVE_ORDER)
+    }
+
+    /**
+     * Sort key for "days since last checked off".
+     * Never checked sorts first, then the longest gap, then checked today.
+     */
+    fun lastCheckedSortKey(): Int {
+        val date = effectiveLastCompletedAt(null) ?: return Int.MIN_VALUE
+        val days =
+            ChronoUnit.DAYS.between(
+                date.toInstant().atZone(ZoneId.systemDefault()).toLocalDate(),
+                LocalDate.now()
+            ).toInt().coerceAtLeast(0)
+        return -days
     }
 
     fun checkIfDue(): Boolean = isDue == true

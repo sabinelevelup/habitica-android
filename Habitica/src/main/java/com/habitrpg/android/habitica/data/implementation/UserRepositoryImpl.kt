@@ -1,12 +1,16 @@
 package com.habitrpg.android.habitica.data.implementation
 
 import android.content.Context
+import android.graphics.drawable.BitmapDrawable
+import com.habitrpg.android.habitica.HabiticaBaseApplication
+import com.habitrpg.android.habitica.R
 import com.habitrpg.android.habitica.data.ApiClient
 import com.habitrpg.android.habitica.data.TaskRepository
 import com.habitrpg.android.habitica.data.UserRepository
 import com.habitrpg.android.habitica.data.local.UserLocalRepository
 import com.habitrpg.android.habitica.helpers.AppConfigManager
 import com.habitrpg.android.habitica.models.Achievement
+import com.habitrpg.android.habitica.models.Skill
 import com.habitrpg.android.habitica.models.QuestAchievement
 import com.habitrpg.android.habitica.models.TeamPlan
 import com.habitrpg.android.habitica.models.inventory.Customization
@@ -16,15 +20,20 @@ import com.habitrpg.android.habitica.models.responses.UnlockResponse
 import com.habitrpg.android.habitica.models.social.Group
 import com.habitrpg.android.habitica.models.social.GroupMembership
 import com.habitrpg.android.habitica.models.tasks.Task
+import android.util.Log
 import com.habitrpg.android.habitica.models.user.Stats
 import com.habitrpg.android.habitica.models.user.User
 import com.habitrpg.android.habitica.models.user.UserQuestStatus
 import com.habitrpg.android.habitica.modules.AuthenticationHandler
+import com.habitrpg.android.habitica.ui.views.HabiticaIconsHelper
+import com.habitrpg.android.habitica.ui.views.HabiticaSnackbar
+import com.habitrpg.android.habitica.ui.views.SnackbarActivity
 import com.habitrpg.android.habitica.widget.glance.work.WidgetRefreshWorker
 import com.habitrpg.common.habitica.models.Notification
 import com.habitrpg.common.habitica.models.notifications.NewStuffData
 import com.habitrpg.shared.habitica.models.responses.TaskDirection
 import com.habitrpg.shared.habitica.models.tasks.Attribute
+import com.habitrpg.shared.habitica.models.tasks.TaskType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.delay
@@ -50,6 +59,78 @@ class UserRepositoryImpl(
     companion object {
         private var lastReadNotification: String? = null
         private var lastSync: Date? = null
+
+        /** Used when the daily list is not loaded. Cron discards unused charges. */
+        private const val FALLBACK_STEALTH_CHARGES = 200
+        private const val STEALTH_LOG_TAG = "DailyStealth"
+
+        /** Last value written this process. Realm does not store stealth. */
+        private var lastStealthWritten: Int = 0
+    }
+
+    /**
+     * Cron skips one missed Daily per point of stats.buffs.stealth, for any class, then clears it.
+     * Refill whenever the server value is below the number of Dailies.
+     */
+    private suspend fun refillDailyStealth(user: User?) {
+        if (user == null) return
+        try {
+            val needed = stealthChargesNeeded(user)
+            val already =
+                if (user.isManaged) {
+                    lastStealthWritten
+                } else {
+                    val serverValue = user.stats?.buffs?.stealth ?: 0
+                    lastStealthWritten = maxOf(lastStealthWritten, serverValue)
+                    serverValue
+                }
+            if (already >= needed) return
+            val userId = user.id?.takeIf { it.isNotBlank() } ?: currentUserID
+            if (userId.isBlank()) return
+            updateUser(userId, "stats.buffs.stealth", needed)
+            lastStealthWritten = needed
+            showStealthSnackbar()
+        } catch (exception: Exception) {
+            Log.e(STEALTH_LOG_TAG, "Failed to set daily stealth", exception)
+        }
+    }
+
+    private suspend fun stealthChargesNeeded(user: User): Int {
+        user.tasksOrder?.let { order ->
+            return order.dailys.size.coerceAtLeast(1)
+        }
+        val userId = user.id?.takeIf { it.isNotBlank() } ?: currentUserID
+        if (userId.isNotBlank()) {
+            val localCount =
+                runCatching {
+                    taskRepository.getTasks(TaskType.DAILY, userId, emptyArray()).firstOrNull()?.size
+                }.getOrNull()
+            if (localCount != null && localCount > 0) return localCount
+        }
+        return FALLBACK_STEALTH_CHARGES
+    }
+
+    private suspend fun showStealthSnackbar() {
+        withContext(Dispatchers.Main) {
+            val activity =
+                (context.applicationContext as? HabiticaBaseApplication)
+                    ?.currentActivity
+                    ?.get() as? SnackbarActivity ?: return@withContext
+            val skillName =
+                runCatching {
+                    if (localRepository.isClosed) return@runCatching null
+                    localRepository.realm
+                        .where(Skill::class.java)
+                        .equalTo("key", "stealth")
+                        .findFirst()
+                        ?.text
+                }.getOrNull()?.takeIf { it.isNotBlank() } ?: context.getString(R.string.spell_stealth)
+            activity.showSnackbar(
+                leftImage = BitmapDrawable(context.resources, HabiticaIconsHelper.imageOfMagic()),
+                content = context.getString(R.string.used_skill_without_mana, skillName),
+                displayType = HabiticaSnackbar.SnackbarDisplayType.BLUE
+            )
+        }
     }
 
     override fun getUser(): Flow<User?> = authenticationHandler.userIDFlow.flatMapLatest { getUser(it) }
@@ -106,6 +187,7 @@ class UserRepositoryImpl(
         if (forced || lastSync == null || Date().time - (lastSync?.time ?: 0) > 180000) {
             val user = apiClient.retrieveUser(withTasks) ?: return null
             lastSync = Date()
+            refillDailyStealth(user)
             withContext(Dispatchers.Main) {
                 localRepository.saveUser(user)
             }
@@ -398,6 +480,8 @@ class UserRepositoryImpl(
             }
             taskRepository.bulkScoreTasks(scoringList)
         }
+        // Cover this cron if it was not already refilled. retrieveUser() sets it again after cron clears it.
+        refillDailyStealth(user)
         apiClient.runCron()
         retrieveUser(true, true)
         delay(2.seconds)

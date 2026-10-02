@@ -4,6 +4,7 @@ import com.google.gson.annotations.SerializedName
 import com.habitrpg.android.habitica.models.BaseObject
 import com.habitrpg.shared.habitica.models.AvatarBuffs
 import io.realm.RealmObject
+import io.realm.annotations.Ignore
 import io.realm.annotations.RealmClass
 
 @RealmClass(embedded = true)
@@ -34,6 +35,13 @@ open class Buffs : RealmObject(), AvatarBuffs, BaseObject {
         get() {
             return field ?: false
         }
+
+    /**
+     * Dailies skipped at the next cron. Not stored in Realm; read from the API response.
+     * Cron applies this for every class and then clears it.
+     */
+    @Ignore
+    var stealth: Int? = null
 
     fun merge(stats: Buffs?) {
         if (stats == null) {

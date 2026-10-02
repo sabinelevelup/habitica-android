@@ -10,6 +10,7 @@ object WidgetSnapshotStore {
     val statsKey = stringPreferencesKey("stats_snapshot")
     val taskListKey = stringPreferencesKey("task_list_snapshot")
     val dailyCountKey = stringPreferencesKey("daily_count_snapshot")
+    val todayDoneKey = stringPreferencesKey("today_done_snapshot")
 
     fun encodeStats(state: StatsWidgetState): String = gson.toJson(state)
 
@@ -17,11 +18,15 @@ object WidgetSnapshotStore {
 
     fun encodeDailyCount(state: DailyCountWidgetState): String = gson.toJson(state)
 
+    fun encodeTodayDone(state: TodayDoneWidgetState): String = gson.toJson(state)
+
     fun statsFrom(prefs: Preferences): StatsWidgetState? = decode(prefs[statsKey], StatsWidgetState::class.java)
 
     fun taskListFrom(prefs: Preferences): TaskListWidgetState? = decode(prefs[taskListKey], TaskListWidgetState::class.java)
 
     fun dailyCountFrom(prefs: Preferences): DailyCountWidgetState? = decode(prefs[dailyCountKey], DailyCountWidgetState::class.java)
+
+    fun todayDoneFrom(prefs: Preferences): TodayDoneWidgetState? = decode(prefs[todayDoneKey], TodayDoneWidgetState::class.java)
 
     private fun <T> decode(json: String?, type: Class<T>): T? =
         json?.let { runCatching { gson.fromJson(it, type) }.getOrNull() }

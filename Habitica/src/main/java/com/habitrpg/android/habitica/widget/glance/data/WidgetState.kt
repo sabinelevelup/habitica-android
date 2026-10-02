@@ -104,6 +104,13 @@ data class DailyCountWidgetState(
     val needsCron: Boolean,
 )
 
+data class TodayDoneWidgetState(
+    val habitsDone: Int,
+    val dailiesDone: Int,
+    val todosDone: Int,
+    val needsCron: Boolean,
+)
+
 fun computeNeedsCron(user: User?, now: Long = System.currentTimeMillis()): Boolean {
     if (user == null) return false
     if (user.needsCron) return true
@@ -164,3 +171,32 @@ suspend fun loadDailyCountState(context: Context): DailyCountWidgetState =
             needsCron = computeNeedsCron(user),
         )
     }
+
+suspend fun loadTodayDoneState(context: Context): TodayDoneWidgetState =
+    withContext(Dispatchers.Main) {
+        val entry = widgetEntryPoint(context)
+        entry.taskRepository().refreshLocalData()
+        val user = entry.userRepository().getUser().firstOrNull()
+        val dayStart = user?.preferences?.dayStart ?: 0
+        val mirroredGroupIds = user?.preferences?.tasks?.mirrorGroupTasks
+            ?.toTypedArray() ?: emptyArray()
+        suspend fun tasks(type: TaskType) = entry.taskRepository().getTasks(
+            taskType = type,
+            userID = user?.id,
+            includedGroupIDs = mirroredGroupIds,
+        ).firstOrNull().orEmpty()
+        val habits = tasks(TaskType.HABIT)
+        val dailies = tasks(TaskType.DAILY)
+        val todos = tasks(TaskType.TODO)
+        TodayDoneWidgetState(
+            habitsDone = habits.count { isInCurrentDay(it.lastCompletedAt, dayStart) },
+            dailiesDone = dailies.count { it.completed(user?.id) && isInCurrentDay(it.lastCompletedAt, dayStart) },
+            todosDone = todos.count { it.completed(user?.id) && isInCurrentDay(it.lastCompletedAt, dayStart) },
+            needsCron = computeNeedsCron(user),
+        )
+    }
+
+private fun isInCurrentDay(date: java.util.Date?, dayStart: Int, now: Long = System.currentTimeMillis()): Boolean {
+    if (date == null) return false
+    return date.time >= CronBoundaryRefreshWorker.lastBoundaryMillis(dayStart, now)
+}

@@ -12,6 +12,7 @@ import androidx.work.PeriodicWorkRequestBuilder
 import androidx.work.WorkManager
 import androidx.work.WorkerParameters
 import com.habitrpg.android.habitica.widget.glance.data.AvatarBitmapCache
+import com.habitrpg.android.habitica.widget.glance.data.WidgetBackgroundCache
 import com.habitrpg.android.habitica.widget.glance.data.WidgetAuth
 import com.habitrpg.android.habitica.widget.glance.state.WidgetStateWriter
 import com.habitrpg.android.habitica.widget.glance.widgets.AddTaskMultiGlanceWidget
@@ -20,6 +21,7 @@ import com.habitrpg.android.habitica.widget.glance.widgets.AvatarStatsGlanceWidg
 import com.habitrpg.android.habitica.widget.glance.widgets.DailiesCountGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.DailyTaskListGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.HabitButtonGlanceWidget
+import com.habitrpg.android.habitica.widget.glance.widgets.TodayDoneGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.TodoTaskListGlanceWidget
 import java.util.concurrent.TimeUnit
 
@@ -66,16 +68,19 @@ class WidgetRefreshWorker(
         suspend fun refreshTaskListWidgetsNow(context: Context) {
             WidgetSnapshotPublisher.publishTaskLists(context)
             WidgetSnapshotPublisher.publishDailyCount(context)
+            WidgetSnapshotPublisher.publishTodayDone(context)
         }
 
         suspend fun clearAllForLogout(context: Context) {
             AvatarBitmapCache.clearCache(context)
+            WidgetBackgroundCache.clearCache(context)
             val manager = GlanceAppWidgetManager(context)
             val widgets: List<GlanceAppWidget> = listOf(
                 AvatarStatsGlanceWidget(),
                 DailyTaskListGlanceWidget(),
                 TodoTaskListGlanceWidget(),
                 DailiesCountGlanceWidget(),
+                TodayDoneGlanceWidget(),
                 AddTaskSingleGlanceWidget(),
                 AddTaskMultiGlanceWidget(),
                 HabitButtonGlanceWidget(),

@@ -13,6 +13,7 @@ import androidx.work.WorkerParameters
 import com.habitrpg.android.habitica.widget.glance.data.WidgetAuth
 import com.habitrpg.android.habitica.widget.glance.data.widgetEntryPoint
 import com.habitrpg.android.habitica.widget.glance.widgets.DailiesCountGlanceWidget
+import com.habitrpg.android.habitica.widget.glance.widgets.TodayDoneGlanceWidget
 import com.habitrpg.android.habitica.widget.glance.widgets.DailyTaskListGlanceWidget
 import com.habitrpg.common.habitica.helpers.ExceptionHandler
 import kotlinx.coroutines.Dispatchers
@@ -86,7 +87,8 @@ class CronBoundaryRefreshWorker(
         private suspend fun hasDailyWidgets(context: Context): Boolean {
             val manager = GlanceAppWidgetManager(context)
             return manager.getGlanceIds(DailyTaskListGlanceWidget::class.java).isNotEmpty() ||
-                manager.getGlanceIds(DailiesCountGlanceWidget::class.java).isNotEmpty()
+                manager.getGlanceIds(DailiesCountGlanceWidget::class.java).isNotEmpty() ||
+                manager.getGlanceIds(TodayDoneGlanceWidget::class.java).isNotEmpty()
         }
 
         suspend fun scheduleFromCache(context: Context) {

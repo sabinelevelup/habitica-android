@@ -109,6 +109,10 @@ class TaskFilterDialog(
                 binding.sortByTagsSwitch.isChecked = false
                 viewModel.setSortByTags(taskType, false)
             }
+            if (viewModel.supportsSortByLastChecked(taskType)) {
+                binding.sortByLastCheckedSwitch.isChecked = false
+                viewModel.setSortByLastChecked(taskType, false)
+            }
         }
 
         if (showTags) {
@@ -381,6 +385,17 @@ class TaskFilterDialog(
             binding.sortByTagsSwitch.isChecked = viewModel.isSortByTags(type)
             binding.sortByTagsSwitch.setOnCheckedChangeListener { _, isChecked ->
                 viewModel.setSortByTags(type, isChecked)
+                filtersChanged()
+            }
+        }
+
+        val lastCheckedSupported = viewModel.supportsSortByLastChecked(type)
+        binding.sortByLastCheckedWrapper.isVisible = lastCheckedSupported
+        if (lastCheckedSupported) {
+            binding.sortByLastCheckedSwitch.setOnCheckedChangeListener(null)
+            binding.sortByLastCheckedSwitch.isChecked = viewModel.isSortByLastChecked(type)
+            binding.sortByLastCheckedSwitch.setOnCheckedChangeListener { _, isChecked ->
+                viewModel.setSortByLastChecked(type, isChecked)
                 filtersChanged()
             }
         }

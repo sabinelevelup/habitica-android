@@ -92,9 +92,13 @@ class TaskSerializer : JsonSerializer<Task>, JsonDeserializer<Task> {
         task.updatedAt = context.deserialize(obj.get("updatedAt"), Date::class.java)
         task.startDate = context.deserialize(obj.get("startDate"), Date::class.java)
         task.isDue = obj.get("isDue")?.asBoolean
-        if (obj.has("history") && obj.get("history").isJsonArray) {
+        if (obj.has("history") && obj.get("history").isJsonArray && task.type != TaskType.TODO) {
             task.lastCompletedParsedFromHistory = true
             task.lastCompletedAt = lastCompletionFromHistory(obj.getAsJsonArray("history"), context)
+        }
+        if (task.type == TaskType.TODO && obj.has("dateCompleted")) {
+            task.lastCompletedParsedFromHistory = true
+            task.lastCompletedAt = parseHistoryDate(obj.get("dateCompleted"), context)
         }
         if (obj.has("nextDue")) {
             task.nextDue = RealmList()
@@ -253,8 +257,9 @@ class TaskSerializer : JsonSerializer<Task>, JsonDeserializer<Task> {
 
     companion object {
         /**
-         * Daily history includes cron misses as well as check-offs.
-         * A check-off is the last time value increased (from the default of 0).
+         * Daily history includes a row for every cron, including misses (completed: false).
+         * A check-off is an entry with completed: true. Habits use scoredUp, then a value increase
+         * for older rows that have neither field.
          */
         internal fun lastCompletionFromHistory(
             history: JsonArray,
@@ -265,15 +270,41 @@ class TaskSerializer : JsonSerializer<Task>, JsonDeserializer<Task> {
             for (element in history) {
                 if (!element.isJsonObject) continue
                 val entry = element.asJsonObject
-                val valueElement = entry.get("value") ?: continue
-                if (!valueElement.isJsonPrimitive || !valueElement.asJsonPrimitive.isNumber) continue
-                val value = valueElement.asDouble
-                if (value > previousValue) {
-                    parseHistoryDate(entry.get("date"), context)?.let { lastCompleted = it }
+                val completedFlag = entry.booleanOrNull("completed")
+                val scoredUp = entry.intOrNull("scoredUp")
+                when {
+                    completedFlag == true || (scoredUp != null && scoredUp > 0) -> {
+                        parseHistoryDate(entry.get("date"), context)?.let { lastCompleted = it }
+                    }
+                    completedFlag == false || scoredUp != null -> Unit
+                    else -> {
+                        val value = entry.doubleOrNull("value") ?: continue
+                        if (value > previousValue) {
+                            parseHistoryDate(entry.get("date"), context)?.let { lastCompleted = it }
+                        }
+                        previousValue = value
+                    }
                 }
-                previousValue = value
             }
             return lastCompleted
+        }
+
+        private fun JsonObject.booleanOrNull(key: String): Boolean? {
+            val element = get(key) ?: return null
+            if (!element.isJsonPrimitive || !element.asJsonPrimitive.isBoolean) return null
+            return element.asBoolean
+        }
+
+        private fun JsonObject.intOrNull(key: String): Int? {
+            val element = get(key) ?: return null
+            if (!element.isJsonPrimitive || !element.asJsonPrimitive.isNumber) return null
+            return element.asInt
+        }
+
+        private fun JsonObject.doubleOrNull(key: String): Double? {
+            val element = get(key) ?: return null
+            if (!element.isJsonPrimitive || !element.asJsonPrimitive.isNumber) return null
+            return element.asDouble
         }
 
         private fun parseHistoryDate(

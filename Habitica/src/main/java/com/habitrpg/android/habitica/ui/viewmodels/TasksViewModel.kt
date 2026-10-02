@@ -205,6 +205,9 @@ constructor(
         if (type != null && supportsSortByTags(type) && isSortByTags(type)) {
             count++
         }
+        if (type != null && supportsSortByLastChecked(type) && isSortByLastChecked(type)) {
+            count++
+        }
         return count
     }
 
@@ -313,7 +316,7 @@ constructor(
     }
 
     fun supportsSortByDifficulty(type: TaskType): Boolean {
-        return type == TaskType.TODO || type == TaskType.HABIT
+        return type == TaskType.TODO || type == TaskType.HABIT || type == TaskType.DAILY
     }
 
     fun isSortByDifficulty(type: TaskType): Boolean {
@@ -330,7 +333,29 @@ constructor(
         return when (type) {
             TaskType.TODO -> TODO_SORT_BY_DIFFICULTY_KEY
             TaskType.HABIT -> HABIT_SORT_BY_DIFFICULTY_KEY
+            TaskType.DAILY -> DAILY_SORT_BY_DIFFICULTY_KEY
             else -> "${type.value}_sort_by_difficulty"
+        }
+    }
+
+    fun supportsSortByLastChecked(type: TaskType): Boolean {
+        return type == TaskType.DAILY
+    }
+
+    fun isSortByLastChecked(type: TaskType): Boolean {
+        return sharedPreferences.getBoolean(sortByLastCheckedKey(type), false)
+    }
+
+    fun setSortByLastChecked(type: TaskType, enabled: Boolean) {
+        if (!supportsSortByLastChecked(type)) return
+        sharedPreferences.edit { putBoolean(sortByLastCheckedKey(type), enabled) }
+        filterSets[type]?.value = Triple(searchQuery, getActiveFilter(type), tags)
+    }
+
+    private fun sortByLastCheckedKey(type: TaskType): String {
+        return when (type) {
+            TaskType.DAILY -> DAILY_SORT_BY_LAST_CHECKED_KEY
+            else -> "${type.value}_sort_by_last_checked"
         }
     }
 
@@ -358,7 +383,7 @@ constructor(
     }
 
     /**
-     * In-memory sort for tag order (and combined tag + effort).
+     * In-memory sort for tags, days since last check-off, and combined effort.
      * Tasks are listed once; with multiple tags, the alphabetically first tag (0-9 A-Z) is used.
      */
     fun applyAdditionalSort(tasks: List<Task>): List<Task> {
@@ -366,25 +391,30 @@ constructor(
         val type = tasks.firstOrNull()?.type ?: return tasks
         val byTags = supportsSortByTags(type) && isSortByTags(type)
         val byEffort = supportsSortByDifficulty(type) && isSortByDifficulty(type)
-        if (!byTags) return tasks
-        return if (byEffort) {
-            tasks.sortedWith(
-                compareBy<Task> { it.primaryTagSortKey() }
-                    .thenBy { it.priority }
-                    .thenBy { it.position }
-            )
-        } else {
-            tasks.sortedWith(
-                compareBy<Task> { it.primaryTagSortKey() }
-                    .thenBy { it.position }
-            )
+        val byLastChecked = supportsSortByLastChecked(type) && isSortByLastChecked(type)
+        if (!byTags && !byLastChecked) return tasks
+        return tasks.sortedWith { a, b ->
+            if (byTags) {
+                val tagOrder = a.primaryTagSortKey().compareTo(b.primaryTagSortKey(), ignoreCase = true)
+                if (tagOrder != 0) return@sortedWith tagOrder
+            }
+            if (byLastChecked) {
+                val checkedOrder = a.lastCheckedSortKey().compareTo(b.lastCheckedSortKey())
+                if (checkedOrder != 0) return@sortedWith checkedOrder
+            }
+            if (byEffort) {
+                val effortOrder = a.priority.compareTo(b.priority)
+                if (effortOrder != 0) return@sortedWith effortOrder
+            }
+            a.position.compareTo(b.position)
         }
     }
 
     fun isGroupedSortActive(type: TaskType?): Boolean {
         if (type == null) return false
         return (supportsSortByDifficulty(type) && isSortByDifficulty(type)) ||
-            (supportsSortByTags(type) && isSortByTags(type))
+            (supportsSortByTags(type) && isSortByTags(type)) ||
+            (supportsSortByLastChecked(type) && isSortByLastChecked(type))
     }
 
     fun sameSortGroup(
@@ -396,9 +426,13 @@ constructor(
         if (!isGroupedSortActive(type)) return true
         val byTags = supportsSortByTags(type) && isSortByTags(type)
         val byEffort = supportsSortByDifficulty(type) && isSortByDifficulty(type)
+        val byLastChecked = supportsSortByLastChecked(type) && isSortByLastChecked(type)
         if (byTags &&
             !a.primaryTagSortKey().equals(b.primaryTagSortKey(), ignoreCase = true)
         ) {
+            return false
+        }
+        if (byLastChecked && a.lastCheckedSortKey() != b.lastCheckedSortKey()) {
             return false
         }
         if (byEffort && a.priority != b.priority) {
@@ -461,9 +495,13 @@ constructor(
                     taskType != null &&
                         supportsSortByTags(taskType) &&
                         isSortByTags(taskType)
-                // Tag sort is applied in-memory after the query; effort-only can use Realm.
+                val byLastChecked =
+                    taskType != null &&
+                        supportsSortByLastChecked(taskType) &&
+                        isSortByLastChecked(taskType)
+                // Tag and last-checked sorts are applied in memory; effort-only can use Realm.
                 query =
-                    if (byEffort && !byTags) {
+                    if (byEffort && !byTags && !byLastChecked) {
                         query.sort("priority", Sort.ASCENDING, "position", Sort.ASCENDING)
                     } else {
                         query.sort("position", Sort.ASCENDING, "dateCreated", Sort.DESCENDING)
@@ -529,6 +567,8 @@ constructor(
     companion object {
         private const val TODO_SORT_BY_DIFFICULTY_KEY = "todo_sort_by_difficulty"
         private const val HABIT_SORT_BY_DIFFICULTY_KEY = "habit_sort_by_difficulty"
+        private const val DAILY_SORT_BY_DIFFICULTY_KEY = "daily_sort_by_difficulty"
+        private const val DAILY_SORT_BY_LAST_CHECKED_KEY = "daily_sort_by_last_checked"
         private const val DAILY_SORT_BY_TAGS_KEY = "daily_sort_by_tags"
         private const val HABIT_SORT_BY_TAGS_KEY = "habit_sort_by_tags"
         private const val TODO_SORT_BY_TAGS_KEY = "todo_sort_by_tags"

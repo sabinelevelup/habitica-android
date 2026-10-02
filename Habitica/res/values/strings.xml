@@ -65,6 +65,7 @@
     <string name="difficulty">Difficulty</string>
     <string name="sort_by_difficulty">Order by effort</string>
     <string name="sort_by_tags">Sort by tags</string>
+    <string name="sort_by_last_checked">Sort by days since last checked off</string>
     <string name="tags">Tags</string>
     <string name="start_date">Start Date</string>
     <string name="positive_habit_form">Positive</string>
@@ -108,6 +109,7 @@
     <string name="filter">Filter</string>
 
     <string name="used_skill_without_mana">You used %1$s.</string>
+    <string name="spell_stealth">Stealth</string>
     <string name="new_checklist_item">New checklist entry</string>
 
     <string name="reminder_title">Remember to check off your tasks</string>
@@ -390,6 +392,7 @@
     <string name="widget_dailies">Dailies List</string>
     <string name="widget_todo_list">To Do List</string>
     <string name="widget_dailies_count">Daily Summary</string>
+    <string name="widget_today_done">Today\'s progress</string>
     <string name="widget_add_task">Create a Task (Single)</string>
     <string name="widget_add_task_multi">Create a Task (Combined)</string>
     <string name="google_services_missing">Google play services could not be found.</string>

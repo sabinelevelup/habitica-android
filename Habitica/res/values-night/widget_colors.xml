@@ -27,4 +27,12 @@
     <color name="widget_level_chip_text">#FFFFFF</color>
     <color name="widget_currency_chip_bg">#434074</color>
     <color name="widget_currency_chip_text">#D5C8FF</color>
+    <color name="widget_today_bg_start">#2B203A</color>
+    <color name="widget_today_bg_end">#3A2860</color>
+    <color name="widget_today_habit">#1E4560</color>
+    <color name="widget_today_daily">#1A4846</color>
+    <color name="widget_today_todo">#1A4634</color>
+    <color name="widget_today_habit_text">#8ED4F5</color>
+    <color name="widget_today_daily_text">#8EE6DC</color>
+    <color name="widget_today_todo_text">#8EE0B8</color>
 </resources>
